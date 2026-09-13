@@ -1,0 +1,23 @@
+{
+  "name": "@xenia/ens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "register-subnames": "tsx src/register-subnames.ts",
+    "write-backing-records": "tsx src/write-backing-records.ts",
+    "demo-eac": "tsx src/demo-eac-access.ts",
+    "deploy-user-registry": "tsx src/deploy-user-registry.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@xenia/config": "workspace:*",
+    "dotenv": "^16.4.7",
+    "viem": "^2.23.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
