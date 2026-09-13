@@ -5,7 +5,7 @@ export const XENIA_ABI = XENIA_REGISTRY_ABI;
 
 export const REGISTRY_ADDRESS = (process.env
   .NEXT_PUBLIC_XENIA_REGISTRY_ADDRESS ||
-  '0x71B8014183E91B49b4B5742b3fDb32DBB451e314') as Address;
+  '0x8B71cd2dfDD7b8F774c84fF977EDF7839ceFDF28') as Address;
 
 export function asAddress(value: string): Address | null {
   return isAddress(value) ? (value as Address) : null;
