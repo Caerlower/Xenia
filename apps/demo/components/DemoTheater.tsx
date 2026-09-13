@@ -120,12 +120,56 @@ function short(addr?: string | null) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+type DemoTx = { label: string; hash: string };
+
+function TxLedger({
+  txs,
+  compact = false,
+}: {
+  txs: DemoTx[];
+  compact?: boolean;
+}) {
+  if (!txs.length) return null;
+  return (
+    <div className={compact ? '' : 'mt-4'}>
+      <p className="text-[10px] uppercase tracking-[0.16em] text-paper/45">
+        On-chain txs · {txs.length}
+      </p>
+      <ul
+        className={`mt-2 space-y-1.5 overflow-y-auto font-mono text-[11px] ${
+          compact ? 'max-h-48' : 'max-h-40'
+        }`}
+      >
+        {txs.map((tx, i) => (
+          <li
+            key={`${tx.hash}-${i}`}
+            className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-paper/70"
+          >
+            <span className="text-paper/55">
+              {String(i + 1).padStart(2, '0')} · {tx.label}
+            </span>
+            <a
+              className="shrink-0 text-[#7dcea0] underline-offset-2 hover:underline"
+              href={`https://sepolia.etherscan.io/tx/${tx.hash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {short(tx.hash)}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SceneVisual({
   stepId,
   status,
   scores,
   runAgents,
   networkAgents,
+  txs,
 }: {
   stepId: StepId;
   status: string;
@@ -135,6 +179,7 @@ function SceneVisual({
     agentB?: { id: string; ensName: string };
   };
   networkAgents: number;
+  txs: DemoTx[];
 }) {
   if (stepId === 'error') {
     return (
@@ -290,35 +335,43 @@ function SceneVisual({
   const okA = scores.takeA ?? a >= 50;
   const refuseB = !(scores.takeB ?? false) || b < 50;
   return (
-    <div className="demo-scene-enter grid h-full gap-4 sm:grid-cols-2 sm:gap-6">
-      <div className="flex flex-col justify-between border border-[#7dcea0]/50 bg-[#101610]/85 p-5 sm:p-6">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#7dcea0]">
-            Agent A
-          </p>
-          <p className="mt-2 font-mono text-[12px] text-paper/80">
-            {runAgents.agentA?.ensName || 'pending'}
-          </p>
-        </div>
-        <p className="demo-score x-pixel text-[64px] text-paper">{a}</p>
-        <p className="x-pixel text-[22px] text-[#7dcea0]">
-          {okA ? 'TRANSACT' : 'HOLD'}
-        </p>
-      </div>
-      <div className="flex flex-col justify-between border border-[#ff6b5a]/50 bg-[#2a1210]/85 p-5 sm:p-6">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#ffb4a8]">
-            Agent B
-          </p>
-          <p className="mt-2 font-mono text-[12px] text-paper/80">
-            {runAgents.agentB?.ensName || 'pending'}
+    <div className="demo-scene-enter flex h-full flex-col gap-5">
+      <div className="grid flex-1 gap-4 sm:grid-cols-2 sm:gap-6">
+        <div className="flex flex-col justify-between border border-[#7dcea0]/50 bg-[#101610]/85 p-5 sm:p-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[#7dcea0]">
+              Agent A
+            </p>
+            <p className="mt-2 font-mono text-[12px] text-paper/80">
+              {runAgents.agentA?.ensName || 'pending'}
+            </p>
+          </div>
+          <p className="demo-score x-pixel text-[64px] text-paper">{a}</p>
+          <p className="x-pixel text-[22px] text-[#7dcea0]">
+            {okA ? 'TRANSACT' : 'HOLD'}
           </p>
         </div>
-        <p className="demo-score x-pixel text-[64px] text-[#ff6b5a]">{b}</p>
-        <p className="x-pixel text-[22px] text-[#ff6b5a]">
-          {refuseB ? 'REFUSE' : 'REVIEW'}
-        </p>
+        <div className="flex flex-col justify-between border border-[#ff6b5a]/50 bg-[#2a1210]/85 p-5 sm:p-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[#ffb4a8]">
+              Agent B
+            </p>
+            <p className="mt-2 font-mono text-[12px] text-paper/80">
+              {runAgents.agentB?.ensName || 'pending'}
+            </p>
+          </div>
+          <p className="demo-score x-pixel text-[64px] text-[#ff6b5a]">{b}</p>
+          <p className="x-pixel text-[22px] text-[#ff6b5a]">
+            {refuseB ? 'REFUSE' : 'REVIEW'}
+          </p>
+        </div>
       </div>
+      {stepId === 'done' && txs.length > 0 && (
+        <div className="border border-paper/20 bg-black/35 p-4 backdrop-blur-sm">
+          <p className="x-pixel text-[18px] text-paper">Verify on Sepolia</p>
+          <TxLedger txs={txs} compact />
+        </div>
+      )}
     </div>
   );
 }
@@ -331,6 +384,7 @@ export function DemoTheater() {
   const [running, setRunning] = useState(false);
   const [touring, setTouring] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [txs, setTxs] = useState<DemoTx[]>([]);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [scores, setScores] = useState<{
     scoreA?: number;
@@ -408,6 +462,7 @@ export function DemoTheater() {
     setStepId('boot');
     setStatus('Starting on-chain demo…');
     setTxHash(null);
+    setTxs([]);
     setScores({});
     setRunAgents({});
     setLogLines(['Starting on-chain demo…']);
@@ -436,6 +491,8 @@ export function DemoTheater() {
             step: StepId;
             message: string;
             txHash?: string;
+            txLabel?: string;
+            txs?: DemoTx[];
             scoreA?: number;
             scoreB?: number;
             takeA?: boolean;
@@ -445,8 +502,23 @@ export function DemoTheater() {
           };
           setStepId(event.step);
           setStatus(event.message);
-          setLogLines((prev) => [...prev.slice(-8), event.message]);
-          if (event.txHash) setTxHash(event.txHash);
+          setLogLines((prev) => [...prev.slice(-12), event.message]);
+          if (event.txs?.length) {
+            setTxs(event.txs);
+            setTxHash(event.txs.at(-1)?.hash ?? null);
+          } else if (event.txHash) {
+            setTxHash(event.txHash);
+            setTxs((prev) => {
+              if (prev.some((t) => t.hash === event.txHash)) return prev;
+              return [
+                ...prev,
+                {
+                  label: event.txLabel || event.message.slice(0, 48),
+                  hash: event.txHash!,
+                },
+              ];
+            });
+          }
           if (event.agentA || event.agentB) {
             setRunAgents((prev) => ({
               agentA: event.agentA ?? prev.agentA,
@@ -573,6 +645,7 @@ export function DemoTheater() {
                 setPreviewId(null);
                 setStatus('');
                 setTxHash(null);
+                setTxs([]);
                 setRunAgents({});
                 setScores({});
                 setLogLines([]);
@@ -635,6 +708,7 @@ export function DemoTheater() {
             scores={scores}
             runAgents={runAgents}
             networkAgents={state?.network.agents ?? 0}
+            txs={txs}
           />
         </div>
 
@@ -657,7 +731,9 @@ export function DemoTheater() {
                 Preview only. Run on-chain spends Sepolia gas.
               </p>
             )}
-            {txHash && (
+            {txs.length > 0 ? (
+              <TxLedger txs={txs} />
+            ) : txHash ? (
               <a
                 className="mt-4 inline-block font-mono text-[11px] text-[#7dcea0] underline-offset-2 hover:underline"
                 href={`https://sepolia.etherscan.io/tx/${txHash}`}
@@ -666,7 +742,7 @@ export function DemoTheater() {
               >
                 Latest tx {short(txHash)}
               </a>
-            )}
+            ) : null}
           </div>
 
           <div>

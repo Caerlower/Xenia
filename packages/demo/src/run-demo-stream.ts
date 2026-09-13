@@ -15,13 +15,16 @@ runOnchainDemo((event) => {
   .then((decision) => {
     emit({
       step: 'done',
-      message: `On-chain demo complete · ${decision.agentA.ensName} / ${decision.agentB.ensName}`,
+      message: `On-chain demo complete · ${decision.txs.length} txs · ${decision.agentA.ensName} / ${decision.agentB.ensName}`,
       scoreA: Number(decision.scoreA),
       scoreB: Number(decision.scoreB),
       takeA: decision.takeA,
       takeB: decision.takeB,
       agentA: decision.agentA,
       agentB: decision.agentB,
+      txs: decision.txs,
+      txHash: decision.txs.at(-1)?.hash,
+      txLabel: decision.txs.at(-1)?.label,
     });
     process.exit(0);
   })

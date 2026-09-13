@@ -42,10 +42,18 @@ export type DemoAgentRef = {
   ensName: string;
 };
 
+export type DemoTxRef = {
+  label: string;
+  hash: string;
+};
+
 export type DemoEvent = {
   step: DemoStepId;
   message: string;
   txHash?: string;
+  txLabel?: string;
+  /** Full ledger of txs for this run (sent on done / error for verification). */
+  txs?: DemoTxRef[];
   scoreA?: number;
   scoreB?: number;
   takeA?: boolean;
@@ -114,12 +122,12 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
 
   const refA: DemoAgentRef = { id: agentA.address.toLowerCase(), ensName: ensA };
   const refB: DemoAgentRef = { id: agentB.address.toLowerCase(), ensName: ensB };
+  const txs: DemoTxRef[] = [];
+  const pushTx = (label: string, hash: string) => {
+    txs.push({ label, hash });
+    return hash;
+  };
 
-  // Spend plan:
-  //   A first fund: gasPad + premium (register)
-  //   A top-up:     gasPad + premium (payPremium)
-  //   B fund:       gasPad (register)
-  //   stakes:       2 × stake from host
   const needed = stake * 2n + gasPad * 3n + premium * 2n + feeBuffer;
   const hostBal = await publicClient.getBalance({ address: host.address });
   if (hostBal < needed) {
@@ -142,14 +150,27 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     agentB: refB,
   });
   log('FUND', `Sending gas+premium to Agent A from ${funderKey} (${host.address})`);
-  await fundAddress(host, agentA.address, gasPad + premium);
+  const fundATx = pushTx(
+    'Fund Agent A',
+    await fundAddress(host, agentA.address, gasPad + premium),
+  );
+  emit({
+    step: 'register',
+    message: `Funded ${ensA}`,
+    txHash: fundATx,
+    txLabel: 'Fund Agent A',
+    agentA: refA,
+    agentB: refB,
+  });
   const { hash: regATx } = await writeRegistry(agentA, 'registerAgent', [
     namehash(ensA),
   ]);
+  pushTx(`Register ${ensA}`, regATx);
   emit({
     step: 'register',
     message: `Registered ${ensA}`,
     txHash: regATx,
+    txLabel: `Register ${ensA}`,
     agentA: refA,
     agentB: refB,
   });
@@ -166,10 +187,12 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     [agentA.address, stake, premium],
     stake,
   );
+  pushTx(`Stake behind ${ensA}`, aBackTx);
   emit({
     step: 'stake',
     message: `${ensA} backing created`,
     txHash: aBackTx,
+    txLabel: `Stake behind ${ensA}`,
     agentA: refA,
     agentB: refB,
   });
@@ -182,19 +205,31 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     agentA: refA,
     agentB: refB,
   });
-  // Register consumed most of the first gas pad — top up before payPremium
   log('FUND', `Top-up ${ensA} for trust fee + gas`);
-  await fundAddress(host, agentA.address, premiumTopUp + premium);
+  const topUpATx = pushTx(
+    'Top-up Agent A',
+    await fundAddress(host, agentA.address, premiumTopUp + premium),
+  );
+  emit({
+    step: 'premium',
+    message: `Topped up ${ensA} for trust fee`,
+    txHash: topUpATx,
+    txLabel: 'Top-up Agent A',
+    agentA: refA,
+    agentB: refB,
+  });
   const { hash: premTx } = await writeRegistry(
     agentA,
     'payPremium',
     [aBackingId],
     premium,
   );
+  pushTx(`Trust fee ${ensA}`, premTx);
   emit({
     step: 'premium',
     message: 'Trust fee settled',
     txHash: premTx,
+    txLabel: `Trust fee ${ensA}`,
     agentA: refA,
     agentB: refB,
   });
@@ -206,15 +241,28 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     agentB: refB,
   });
   log('FUND', `Sending gas to Agent B from ${funderKey} (${host.address})`);
-  await fundAddress(host, agentB.address, gasPad);
+  const fundBTx = pushTx(
+    'Fund Agent B',
+    await fundAddress(host, agentB.address, gasPad),
+  );
+  emit({
+    step: 'default',
+    message: `Funded ${ensB}`,
+    txHash: fundBTx,
+    txLabel: 'Fund Agent B',
+    agentA: refA,
+    agentB: refB,
+  });
   const { hash: regBTx } = await writeRegistry(agentB, 'registerAgent', [
     namehash(ensB),
   ]);
+  pushTx(`Register ${ensB}`, regBTx);
   log('B1', `Registered ${ensB} tx=${regBTx}`);
   emit({
     step: 'default',
     message: `Registered ${ensB}. Host staking ${formatEther(stake)} ETH`,
     txHash: regBTx,
+    txLabel: `Register ${ensB}`,
     agentA: refA,
     agentB: refB,
   });
@@ -225,6 +273,15 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     [agentB.address, stake, premium],
     stake,
   );
+  pushTx(`Stake behind ${ensB}`, bBackTx);
+  emit({
+    step: 'default',
+    message: `${ensB} backing created`,
+    txHash: bBackTx,
+    txLabel: `Stake behind ${ensB}`,
+    agentA: refA,
+    agentB: refB,
+  });
   const bBackingId = extractBackingId(bBackReceipt.logs);
   if (!bBackingId) throw new Error('Could not parse Agent B BackingCreated');
 
@@ -232,10 +289,12 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     bBackingId,
     victim.address,
   ]);
+  pushTx(`Report default ${ensB}`, reportTx);
   emit({
     step: 'default',
     message: `${ensB} default reported. Dispute window open`,
-    txHash: reportTx || bBackTx,
+    txHash: reportTx,
+    txLabel: `Report default ${ensB}`,
     agentA: refA,
     agentB: refB,
   });
@@ -260,11 +319,13 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     bBackingId,
     true,
   ]);
+  pushTx(`Slash / resolve ${ensB}`, slashTx);
   const after = await publicClient.getBalance({ address: victim.address });
   emit({
     step: 'slash',
     message: `Victim received ${formatEther(after - before)} ETH`,
     txHash: slashTx,
+    txLabel: `Slash / resolve ${ensB}`,
     agentA: refA,
     agentB: refB,
   });
@@ -299,20 +360,24 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     scoreB,
     takeA,
     takeB,
+    txs,
     agentA: refA,
     agentB: refB,
   });
 
   emit({
     step: 'done',
-    message: `On-chain demo complete · ${ensA} / ${ensB}`,
+    message: `On-chain demo complete · ${txs.length} txs · ${ensA} / ${ensB}`,
     scoreA,
     scoreB,
     takeA,
     takeB,
+    txs,
+    txHash: slashTx,
+    txLabel: `Slash / resolve ${ensB}`,
     agentA: refA,
     agentB: refB,
   });
 
-  return { takeA, takeB, scoreA, scoreB, agentA: refA, agentB: refB };
+  return { takeA, takeB, scoreA, scoreB, agentA: refA, agentB: refB, txs };
 }
