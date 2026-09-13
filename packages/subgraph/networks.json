@@ -1,0 +1,8 @@
+{
+  "sepolia": {
+    "XeniaRegistry": {
+      "address": "0x8B71cd2dfDD7b8F774c84fF977EDF7839ceFDF28",
+      "startBlock": 11695254
+    }
+  }
+}
