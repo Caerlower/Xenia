@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xenia — design mockup (homepage + agent profile)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #1c1b16;
+        --stone: #dcd7c9;
+        --surface: #f2efe6;
+        --olive: #5c6644;
+        --olive-deep: #3e4530;
+        --bronze: #a6702e;
+        --clay: #8c3d2b;
+        --border: rgba(28, 27, 22, 0.14);
+        --border-strong: rgba(28, 27, 22, 0.28);
+        --body: rgba(28, 27, 22, 0.72);
+        --muted: rgba(28, 27, 22, 0.55);
+        --mono: rgba(28, 27, 22, 0.52);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--stone);
+        color: var(--ink);
+        font-family: "Source Sans 3", system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      a { color: inherit; text-decoration: none; }
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 28px 56px;
+        border-bottom: 1px solid var(--border);
+      }
+      .wordmark { font-family: "Instrument Serif", Georgia, serif; font-size: 24px; }
+      .btn-ink {
+        background: var(--ink);
+        color: var(--stone);
+        border: 0;
+        border-radius: 7px;
+        padding: 10px 16px;
+        font: 500 15px/1 "Source Sans 3", sans-serif;
+        cursor: pointer;
+      }
+      .btn-olive {
+        background: var(--olive);
+        color: var(--stone);
+        border: 0;
+        border-radius: 7px;
+        padding: 10px 16px;
+        font: 500 15px/1 "Source Sans 3", sans-serif;
+      }
+      .hero {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 64px 56px 40px;
+      }
+      .hero h1 {
+        font-family: "Instrument Serif", Georgia, serif;
+        font-size: 56px;
+        font-weight: 400;
+        line-height: 1.12;
+        margin: 0;
+      }
+      .check {
+        margin-top: 28px;
+        display: flex;
+        gap: 0;
+        padding: 6px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .check input {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        font: 400 14px/1.4 "JetBrains Mono", monospace;
+        padding: 10px 12px;
+        color: var(--ink);
+        outline: none;
+      }
+      .steps {
+        max-width: 1120px;
+        margin: 40px auto 96px;
+        padding: 0 56px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+      }
+      .step-n {
+        font: 500 14px/1 "JetBrains Mono", monospace;
+        color: var(--bronze);
+      }
+      .step h2 {
+        margin: 12px 0 8px;
+        font: 600 20px/1.3 "Source Sans 3", sans-serif;
+      }
+      .step p { margin: 0; color: var(--body); }
+      .label { font-size: 13px; color: var(--muted); }
+      .profile {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 56px 96px;
+      }
+      .profile-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border);
+      }
+      .profile-head h1 {
+        margin: 0;
+        font: 400 42px/1.1 "Instrument Serif", Georgia, serif;
+      }
+      .mono { font: 400 13px/1.4 "JetBrains Mono", monospace; color: var(--mono); }
+      .score { font: 600 44px/1 "Source Sans 3", sans-serif; color: var(--olive-deep); text-align: right; }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 40px;
+        margin-top: 40px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 15px;
+      }
+      .row.total {
+        border-top: 2px solid var(--border-strong);
+        font-weight: 600;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      .money { font: 600 28px/1.1 "Source Sans 3", sans-serif; color: var(--bronze); }
+      .timeline { display: flex; gap: 12px; margin: 14px 0; align-items: flex-start; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--olive); margin-top: 6px; flex-shrink: 0; }
+      .date { width: 84px; flex-shrink: 0; font: 400 13px/1.4 "JetBrains Mono", monospace; color: var(--mono); }
+      .amt { margin-left: auto; font: 500 13px/1.4 "JetBrains Mono", monospace; color: var(--bronze); }
+      .divider { height: 64px; background: #c9c3b4; }
+      @media (max-width: 720px) {
+        .nav, .hero, .steps, .profile { padding-left: 24px; padding-right: 24px; }
+        .hero h1 { font-size: 36px; }
+        .steps, .grid { grid-template-columns: 1fr; }
+        .profile-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+        .score { text-align: left; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Homepage -->
+    <header class="nav">
+      <div class="wordmark">Xenia</div>
+      <button class="btn-ink" type="button">Connect wallet</button>
+    </header>
+    <section class="hero">
+      <h1>Trust for agents,<br />backed by stake.</h1>
+      <form class="check" onsubmit="return false;">
+        <input placeholder="agent-name.xenia.eth or 0x…" />
+        <button class="btn-olive" type="button">Check standing</button>
+      </form>
+    </section>
+    <section class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <h2>A host stakes collateral</h2>
+        <p>Someone puts real ETH behind an agent’s good behavior. That deposit is locked while the agent works.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <h2>The guest pays a premium</h2>
+        <p>The agent renews coverage with a small ongoing fee — like keeping an insurance policy active.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <h2>Default → slash</h2>
+        <p>If the agent harms a counterparty, the host’s stake is paid to the victim and the premium stream stops.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true"></div>
+
+    <!-- Agent profile -->
+    <header class="nav">
+      <div class="wordmark">Xenia</div>
+      <button class="btn-ink" type="button">Connect wallet</button>
+    </header>
+    <section class="profile">
+      <div class="profile-head">
+        <div>
+          <h1>agent-a</h1>
+          <div class="mono" style="margin-top:8px">agent-a.xenia.eth · 0x6c0d…007a</div>
+          <div style="margin-top:8px;font-size:13px;font-weight:500;color:var(--olive)">In good standing</div>
+        </div>
+        <div>
+          <div class="label">Standing score</div>
+          <div class="score">70</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="label" style="margin-bottom:16px">Why this score</div>
+          <div class="row"><span>Base score</span><span>+50</span></div>
+          <div class="row"><span>Premium bonus</span><span>+20</span></div>
+          <div class="row"><span>Default penalty</span><span>0</span></div>
+          <div class="row"><span>Slash penalty</span><span>0</span></div>
+          <div class="row total"><span>Standing score</span><span style="color:var(--olive-deep)">70</span></div>
+          <div class="label" style="margin:48px 0 16px">Premium history</div>
+          <div class="timeline">
+            <span class="dot"></span>
+            <span class="date">2026-09-12</span>
+            <span>Premium paid</span>
+            <span class="amt">0.0010 ETH</span>
+          </div>
+          <div class="timeline">
+            <span class="dot"></span>
+            <span class="date">2026-09-11</span>
+            <span>Premium paid</span>
+            <span class="amt">0.0010 ETH</span>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="label">Current host</div>
+            <div class="mono" style="margin-top:8px;color:var(--ink);font-size:14px">0x44ce…fb13</div>
+          </div>
+          <div class="card">
+            <div class="label">Stake amount</div>
+            <div class="money" style="margin-top:8px">0.0100 ETH</div>
+            <p style="margin:8px 0 0;color:var(--body);font-size:13px">If this agent defaults, this amount can be paid to the injured counterparty.</p>
+          </div>
+          <div class="card">
+            <div class="label">Premium rate</div>
+            <div class="money" style="margin-top:8px">0.0010 ETH / period</div>
+          </div>
+          <button class="btn-ink" style="width:100%;margin-top:8px" type="button">Check this agent's standing.</button>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
