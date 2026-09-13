@@ -1,0 +1,562 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #edf0ed;
+  --surface: #f7f8f7;
+  --ink: #0a0a0a;
+  --muted: #6b6f6b;
+  --line: #d5d8d5;
+  --olive: #0a0a0a;
+  --bronze: #2a2a2a;
+  --dark: #0a0a0a;
+  --red: #c43c2c;
+  --amber: #9a6b2f;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(10, 10, 10, 0.18);
+}
+
+@keyframes wordIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scanDrift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 8px;
+  }
+}
+
+/* Full-bleed CRT hero */
+@keyframes oathDrift {
+  0% {
+    transform: scale(1.12) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.18) translate3d(-2%, 1.2%, 0);
+  }
+  100% {
+    transform: scale(1.12) translate3d(1%, -0.8%, 0);
+  }
+}
+
+@keyframes oathFlicker {
+  0%,
+  88%,
+  100% {
+    opacity: 1;
+    filter: contrast(1.08) brightness(0.95);
+  }
+  89% {
+    opacity: 0.72;
+    filter: contrast(1.35) brightness(1.08);
+  }
+  90% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0.88;
+  }
+  97% {
+    opacity: 1;
+  }
+}
+
+@keyframes oathScan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 6px;
+  }
+}
+
+@keyframes oathScanFine {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 3px;
+  }
+}
+
+@keyframes oathSweep {
+  0% {
+    transform: translate3d(0, -30%, 0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.55;
+  }
+  40% {
+    opacity: 0.28;
+  }
+  100% {
+    transform: translate3d(0, 220%, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes oathGlitch {
+  0%,
+  86%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  87% {
+    opacity: 0.45;
+    transform: translate3d(-6px, 0, 0);
+  }
+  88% {
+    opacity: 0.35;
+    transform: translate3d(5px, -2px, 0);
+  }
+  89% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes oathReveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes siteGrain {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-2%, -3%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-word {
+    display: block;
+    animation: wordIn 0.55s var(--ease-out) both;
+  }
+  .hero-word:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .hero-word:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .reveal-on-scroll {
+    animation: fadeUp 0.5s var(--ease-reveal) both;
+  }
+  .scan-drift {
+    animation: scanDrift 1.2s linear infinite;
+  }
+  .hero-oath-stage {
+    animation: oathDrift 11s var(--ease-reveal) infinite alternate,
+      oathFlicker 4.2s steps(1) infinite;
+    will-change: transform, filter;
+  }
+  .hero-oath-scan {
+    animation: oathScan 0.55s linear infinite;
+  }
+  .hero-oath-scan-fine {
+    animation: oathScanFine 0.28s linear infinite;
+  }
+  .hero-oath-sweep {
+    animation: oathSweep 3.2s var(--ease-out) infinite;
+  }
+  .hero-oath-glitch {
+    animation: oathGlitch 5.5s steps(1) infinite;
+  }
+  .site-crt-grain {
+    animation: siteGrain 0.35s steps(2) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word,
+  .reveal-on-scroll,
+  .scan-drift,
+  .hero-oath-stage,
+  .hero-oath-scan,
+  .hero-oath-scan-fine,
+  .hero-oath-sweep,
+  .hero-oath-glitch,
+  .site-crt-grain {
+    animation: none;
+  }
+}
+
+@layer components {
+  .x-wrap {
+    @apply mx-auto w-[calc(100%-40px)] max-w-wrap bp:w-[calc(100%-72px)];
+  }
+
+  .x-page {
+    @apply x-wrap pb-16 pt-8 lg:pb-20 lg:pt-10;
+  }
+
+  .x-profile {
+    @apply x-wrap pb-16 pt-8 lg:pb-20 lg:pt-10;
+  }
+
+  .x-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .x-body {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .x-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .x-eyebrow {
+    @apply flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted;
+  }
+
+  .x-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-ink;
+  }
+
+  .x-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-none px-5 py-3 text-[13px] font-medium transition-[transform,background-color,opacity] duration-150 ease-out;
+  }
+
+  .x-btn:active {
+    transform: scale(0.97);
+  }
+
+  .x-btn-ink {
+    @apply x-btn border border-ink bg-transparent text-ink hover:bg-ink hover:text-paper;
+  }
+
+  .x-btn-fill {
+    @apply x-btn bg-ink text-paper hover:opacity-85;
+  }
+
+  .x-btn-olive {
+    @apply x-btn bg-ink text-paper hover:opacity-85;
+  }
+
+  .x-btn-ghost {
+    @apply x-btn border border-line bg-transparent text-ink hover:border-ink;
+  }
+
+  .x-text-link {
+    @apply inline-flex items-center gap-1.5 text-[13px] text-ink transition-opacity duration-150 hover:opacity-60;
+  }
+
+  .x-card {
+    @apply rounded-none border border-line bg-surface p-5;
+  }
+
+  .x-input {
+    @apply w-full bg-transparent font-mono text-[14px] text-ink outline-none placeholder:text-muted;
+  }
+
+  .x-panel {
+    @apply rounded-none border border-line bg-surface p-5 bp:p-6;
+  }
+
+  .x-ledger {
+    @apply w-full border-collapse text-left;
+  }
+
+  .x-ledger th {
+    @apply border-b border-line pb-3 pr-4 pl-3 pt-3 text-left text-[8px] font-medium uppercase tracking-[0.12em] text-muted;
+  }
+
+  .x-ledger td {
+    @apply border-b border-line py-4 pr-6 pl-3 text-[12px] transition-colors duration-150;
+  }
+
+  .x-ledger tbody tr {
+    @apply cursor-pointer;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .x-ledger tbody tr:hover {
+      background: #e4e6e4;
+    }
+  }
+
+  .x-pixel {
+    font-family: var(--font-display), ui-monospace, monospace;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  .hero-bleed {
+    width: 100%;
+    min-height: 100dvh;
+    background: #121412;
+  }
+
+  .hero-bleed::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 2;
+    height: 96px;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--dark)
+    );
+  }
+
+  .hero-oath-plane {
+    overflow: hidden;
+  }
+
+  .hero-oath-img {
+    filter: grayscale(1) contrast(1.15) brightness(0.92);
+  }
+
+  .hero-oath-vignette {
+    background: radial-gradient(
+      ellipse at 68% 42%,
+      transparent 15%,
+      rgba(10, 10, 10, 0.25) 75%,
+      rgba(10, 10, 10, 0.45) 100%
+    );
+  }
+
+  /* Soft paper wash only where copy lives — right side stays full CRT image */
+  .hero-oath-scrim {
+    background: linear-gradient(
+      92deg,
+      rgba(237, 240, 237, 0.96) 0%,
+      rgba(237, 240, 237, 0.9) 22%,
+      rgba(237, 240, 237, 0.4) 38%,
+      rgba(237, 240, 237, 0.05) 52%,
+      transparent 62%
+    );
+  }
+
+  @media (max-width: 1023px) {
+    .hero-oath-scrim {
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(237, 240, 237, 0.15) 22%,
+        rgba(237, 240, 237, 0.78) 55%,
+        rgba(237, 240, 237, 0.96) 100%
+      );
+    }
+  }
+
+  .hero-oath-scan {
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(10, 10, 10, 0.32) 0px,
+      rgba(10, 10, 10, 0.32) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+
+  .hero-oath-scan-fine {
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(237, 240, 237, 0.1) 0px,
+      transparent 1px,
+      transparent 2px
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0.5;
+  }
+
+  .hero-oath-sweep {
+    height: 32%;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(237, 240, 237, 0.28) 48%,
+      transparent 100%
+    );
+    mix-blend-mode: soft-light;
+  }
+
+  .hero-oath-glitch {
+    background: linear-gradient(
+      90deg,
+      rgba(196, 60, 44, 0.18),
+      transparent 42%,
+      rgba(90, 140, 180, 0.14)
+    );
+    mix-blend-mode: screen;
+    opacity: 0;
+  }
+
+  .hero-oath-noise {
+    opacity: 0.09;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    mix-blend-mode: overlay;
+  }
+}
+
+/* Whisper CRT grain across the whole site — ties pages to the hero without boxing it */
+.site-crt-grain {
+  position: fixed;
+  inset: -10%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.018;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-crt-grain {
+    display: none;
+  }
+}
+
+/* RainbowKit
+   IMPORTANT: the full-screen overlay itself has role="dialog".
+   Never paint [role=dialog] with an opaque paper color — that hides the site.
+   Overlay = translucent ink. Inner content (role=document / modalBackground) = paper.
+*/
+[data-rk] {
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  --rk-colors-modalBackdrop: rgba(10, 10, 10, 0.4) !important;
+  --rk-colors-modalBackground: #edf0ed !important;
+  --rk-colors-modalBorder: #0a0a0a !important;
+  --rk-colors-modalText: #0a0a0a !important;
+  --rk-colors-modalTextSecondary: #6b6f6b !important;
+  --rk-colors-profileForeground: #edf0ed !important;
+  --rk-colors-profileAction: #f7f8f7 !important;
+  --rk-colors-profileActionHover: #e4e6e4 !important;
+  --rk-colors-closeButton: #0a0a0a !important;
+  --rk-colors-closeButtonBackground: #d5d8d5 !important;
+  --rk-colors-actionButtonSecondaryBackground: #f7f8f7 !important;
+  --rk-colors-generalBorder: #d5d8d5 !important;
+  --rk-colors-menuItemBackground: #f7f8f7 !important;
+  --rk-colors-accentColor: #0a0a0a !important;
+  --rk-colors-accentColorForeground: #edf0ed !important;
+  --rk-blurs-modalOverlay: blur(0px) !important;
+  --rk-radii-modal: 0px !important;
+  --rk-radii-modalMobile: 0px !important;
+  --rk-radii-actionButton: 0px !important;
+  --rk-radii-connectButton: 0px !important;
+  --rk-radii-menuButton: 0px !important;
+  --rk-shadows-dialog: 0 24px 64px rgba(10, 10, 10, 0.28) !important;
+}
+
+/* Full-viewport overlay (role=dialog) — must stay translucent */
+[data-rk] [role='dialog'],
+[data-rk] .ju367vb3,
+[data-rk] ._9pm4ki3 {
+  background: rgba(10, 10, 10, 0.4) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Actual account / connect card (DialogContent), not the overlay */
+[data-rk] .ju367vb6,
+[data-rk] ._1ckjpok1 {
+  background: #edf0ed !important;
+  border: 1px solid #0a0a0a !important;
+  border-radius: 0 !important;
+  box-shadow: 0 24px 64px rgba(10, 10, 10, 0.28) !important;
+  overflow: hidden;
+}
+
+[data-rk] .ju367vp {
+  border-radius: 0 !important;
+}
+
+[data-rk] button {
+  border-radius: 0 !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+}
+
+[data-rk] .ju367vb6 button,
+[data-rk] ._1ckjpok1 button {
+  border: 1px solid #0a0a0a !important;
+  background: #f7f8f7 !important;
+  color: #0a0a0a !important;
+}
+
+[data-rk] h1,
+[data-rk] [id^='rk_'] {
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  color: #0a0a0a !important;
+}
