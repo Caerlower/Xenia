@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+package-lock.json
+**/package-lock.json
+yarn.lock
+
+
+# Build
+dist/
+.next/
+out/
+cache/
+broadcast/
+contracts/out/
+contracts/cache/
+packages/subgraph/generated/
+packages/subgraph/build/
+apps/web/.next/
+apps/demo/.next/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+apps/web/.design-preview.png
+
+.cursor/
+.turbo/
+coverage/
+*.tsbuildinfo
+.vercel/
+
+# Graph
+.graphclient/
