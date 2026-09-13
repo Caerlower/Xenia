@@ -1,0 +1,45 @@
+{
+  "name": "xenia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Slashable-stake trust/insurance protocol for AI agents — ETHGlobal Online",
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "build": "pnpm run build:contracts && pnpm run build:subgraph",
+    "build:contracts": "cd contracts && forge build",
+    "test:contracts": "cd contracts && forge test -vv",
+    "build:subgraph": "pnpm --filter @xenia/subgraph codegen && pnpm --filter @xenia/subgraph build",
+    "dev:api": "pnpm --filter @xenia/api dev",
+    "dev:web": "pnpm --filter @xenia/web dev",
+    "dev:demo": "pnpm --filter @xenia/demo-site dev",
+    "dev:mcp": "pnpm --filter @xenia/mcp start",
+    "dev:x402": "pnpm run dev:api",
+    "dev:dashboard": "pnpm run dev:demo",
+    "demo": "pnpm --filter @xenia/demo demo",
+    "ens:register": "pnpm --filter @xenia/ens register-subnames",
+    "ens:backing": "pnpm --filter @xenia/ens write-backing-records",
+    "ens:eac": "pnpm --filter @xenia/ens demo-eac",
+    "ens:deploy-registry": "pnpm --filter @xenia/ens deploy-user-registry",
+    "smoke:x402": "pnpm --filter @xenia/api smoke",
+    "lint:types": "tsc -p tsconfig.base.json --noEmit || true"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "overrides": {
+      "viem": "2.56.3"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "keccak",
+      "bufferutil",
+      "utf-8-validate",
+      "protobufjs"
+    ]
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0"
+  }
+}
