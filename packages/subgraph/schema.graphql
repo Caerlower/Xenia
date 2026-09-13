@@ -1,0 +1,73 @@
+"""
+Xenia subgraph schema — indexes XeniaRegistry events and computes standing scores.
+standingScore = clamp(50 + 10*premiumsPaid - 25*defaults - 40*slashes, 0, 100)
+"""
+
+type Agent @entity(immutable: false) {
+  id: ID! # agent wallet address (lowercase)
+  wallet: Bytes!
+  ensNode: Bytes
+  ensName: String
+  registeredAt: BigInt!
+  backings: [Backing!]! @derivedFrom(field: "agent")
+  premiumsPaidCount: BigInt!
+  defaultsCount: BigInt!
+  slashesCount: BigInt!
+  standingScore: Int!
+  inGoodStanding: Boolean!
+  updatedAt: BigInt!
+}
+
+type Backing @entity(immutable: false) {
+  id: ID! # backingId hex
+  agent: Agent!
+  host: Bytes!
+  stakeAmount: BigInt!
+  premiumRate: BigInt!
+  premiumsPaid: BigInt!
+  lastPremiumAt: BigInt!
+  status: String! # Active | Disputed | Slashed | Revoked
+  counterparty: Bytes
+  disputeOpenedAt: BigInt
+  createdAt: BigInt!
+  premiums: [PremiumPayment!]! @derivedFrom(field: "backing")
+  defaults: [DefaultReport!]! @derivedFrom(field: "backing")
+  slashes: [SlashEvent!]! @derivedFrom(field: "backing")
+}
+
+type PremiumPayment @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  backing: Backing!
+  agent: Bytes!
+  host: Bytes!
+  amount: BigInt!
+  premiumsPaidTotal: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type DefaultReport @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  backing: Backing!
+  agent: Bytes!
+  host: Bytes!
+  counterparty: Bytes!
+  stakeAmount: BigInt!
+  disputeDeadline: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type SlashEvent @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  backing: Backing!
+  agent: Bytes!
+  host: Bytes!
+  counterparty: Bytes!
+  slashAmount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
