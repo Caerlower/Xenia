@@ -1,0 +1,17 @@
+{
+  "name": "@xenia/subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy xenia-registry -l v0.0.1",
+    "auth": "graph auth",
+    "create-local": "graph create --node http://localhost:8020/ xenia-registry",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 xenia-registry"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.96.0",
+    "@graphprotocol/graph-ts": "^0.37.0"
+  }
+}
