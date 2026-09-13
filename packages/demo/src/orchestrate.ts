@@ -6,6 +6,7 @@ import {
   decodeEventLog,
   formatEther,
   namehash,
+  type Address,
   type Hex,
   type Log,
 } from 'viem';
@@ -23,6 +24,7 @@ import {
   victimFromEnv,
   writeRegistry,
 } from './lib.js';
+import { assertX402ServiceUp, paidStandingCheck } from './x402-pay.js';
 
 export type DemoStepId =
   | 'boot'
@@ -33,6 +35,7 @@ export type DemoStepId =
   | 'waiting'
   | 'slash'
   | 'index'
+  | 'x402'
   | 'verdict'
   | 'done'
   | 'error';
@@ -54,6 +57,7 @@ export type DemoEvent = {
   txLabel?: string;
   /** Full ledger of txs for this run (sent on done / error for verification). */
   txs?: DemoTxRef[];
+  hashscanUrl?: string;
   scoreA?: number;
   scoreB?: number;
   takeA?: boolean;
@@ -86,18 +90,68 @@ function runLabel() {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-function standingScoreFromPayload(standing: unknown): number {
+/** Subgraph agent standing — distinguish "not indexed yet" from real score 0. */
+function standingFromPayload(standing: unknown): {
+  found: boolean;
+  score: number;
+} {
   const s = standing as {
-    data?: { agent?: { standingScore?: number; inGoodStanding?: boolean } };
+    data?: { agent?: { standingScore?: number; inGoodStanding?: boolean } | null };
+    agent?: { standingScore?: number; inGoodStanding?: boolean } | null;
     inGoodStanding?: boolean;
   };
-  if (typeof s.data?.agent?.standingScore === 'number') {
-    return s.data.agent.standingScore;
+  const agent = s.data?.agent ?? s.agent;
+  if (agent && typeof agent.standingScore === 'number') {
+    return { found: true, score: agent.standingScore };
   }
   if (typeof s.inGoodStanding === 'boolean') {
-    return s.inGoodStanding ? 60 : 0;
+    return { found: true, score: s.inGoodStanding ? 60 : 0 };
   }
-  return 0;
+  return { found: false, score: 0 };
+}
+
+/**
+ * Poll The Graph until the agent row exists (slash/index can lag a few seconds).
+ * Falls back to on-chain isInGoodStanding, then any positive paid x402 score.
+ */
+async function resolveStandingScore(
+  agentId: string,
+  paidScore: number | undefined,
+  emit: DemoEmit,
+  label: string,
+): Promise<number> {
+  const attempts = Number(process.env.STANDING_POLL_ATTEMPTS ?? 12);
+  const delayMs = Number(process.env.STANDING_POLL_MS ?? 2000);
+
+  for (let i = 0; i < attempts; i++) {
+    const standing = await checkStandingViaMcpShape(agentId);
+    const { found, score } = standingFromPayload(standing);
+    if (found) {
+      if (i > 0) {
+        emit({
+          step: 'verdict',
+          message: `Indexed standing for ${label}: ${score}`,
+        });
+      }
+      return score;
+    }
+    if (i === 0) {
+      emit({
+        step: 'verdict',
+        message: `Waiting for subgraph to index ${label}…`,
+      });
+    }
+    await sleep(delayMs);
+  }
+
+  const onchain = await publicClient.readContract({
+    address: REGISTRY,
+    abi: XENIA_REGISTRY_ABI,
+    functionName: 'isInGoodStanding',
+    args: [agentId as Address],
+  });
+  if (typeof paidScore === 'number' && paidScore > 0) return paidScore;
+  return onchain ? 60 : 0;
 }
 
 export async function runOnchainDemo(emit: DemoEmit = () => {}) {
@@ -339,15 +393,61 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
   await sleep(4_000);
 
   emit({
-    step: 'verdict',
-    message: "Checker reads standing for this run's agents",
+    step: 'x402',
+    message: 'Hedera x402: pay HBAR to unlock standing API',
     agentA: refA,
     agentB: refB,
   });
-  const standingA = await checkStandingViaMcpShape(agentA.address);
-  const standingB = await checkStandingViaMcpShape(agentB.address);
-  const scoreA = standingScoreFromPayload(standingA);
-  const scoreB = standingScoreFromPayload(standingB);
+  await assertX402ServiceUp();
+  log('X402', `Unpaid probe then paid check for ${ensA}`);
+  emit({
+    step: 'x402',
+    message: `POST /xenia/check → expect 402, then pay ~0.001 HBAR for ${ensA}`,
+    agentA: refA,
+    agentB: refB,
+  });
+  const paidA = await paidStandingCheck(agentA.address);
+  if (paidA.hashscanUrl) {
+    emit({
+      step: 'x402',
+      message: `Paid standing for A · HashScan ${paidA.settlementTx ?? ''}`.trim(),
+      hashscanUrl: paidA.hashscanUrl,
+      agentA: refA,
+      agentB: refB,
+    });
+  }
+  log('X402', `Paid check for ${ensB}`);
+  const paidB = await paidStandingCheck(agentB.address);
+  if (paidB.hashscanUrl) {
+    emit({
+      step: 'x402',
+      message: `Paid standing for B · HashScan ${paidB.settlementTx ?? ''}`.trim(),
+      hashscanUrl: paidB.hashscanUrl,
+      agentA: refA,
+      agentB: refB,
+    });
+  }
+
+  emit({
+    step: 'verdict',
+    message: 'Checker decides from paid Hedera standing + indexed scores',
+    agentA: refA,
+    agentB: refB,
+  });
+  // Prefer subgraph (authoritative). Do not let a premature paid score of 0
+  // win via ?? before the agent is indexed — that made A look like B.
+  const scoreA = await resolveStandingScore(
+    agentA.address,
+    paidA.standingScore,
+    emit,
+    ensA,
+  );
+  const scoreB = await resolveStandingScore(
+    agentB.address,
+    paidB.standingScore,
+    emit,
+    ensB,
+  );
   const takeA = scoreA >= 50;
   const takeB = scoreB >= 50;
 
@@ -355,19 +455,20 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     step: 'verdict',
     message: `A ${takeA ? 'TRANSACT' : 'REFUSE'} (${scoreA}) · B ${
       takeB ? 'TRANSACT' : 'REFUSE'
-    } (${scoreB})`,
+    } (${scoreB}) · x402 paid`,
     scoreA,
     scoreB,
     takeA,
     takeB,
     txs,
+    hashscanUrl: paidA.hashscanUrl || paidB.hashscanUrl,
     agentA: refA,
     agentB: refB,
   });
 
   emit({
     step: 'done',
-    message: `On-chain demo complete · ${txs.length} txs · ${ensA} / ${ensB}`,
+    message: `Complete · ${txs.length} Sepolia txs · Hedera x402 paid · ${ensA} / ${ensB}`,
     scoreA,
     scoreB,
     takeA,
@@ -375,9 +476,19 @@ export async function runOnchainDemo(emit: DemoEmit = () => {}) {
     txs,
     txHash: slashTx,
     txLabel: `Slash / resolve ${ensB}`,
+    hashscanUrl: paidA.hashscanUrl || paidB.hashscanUrl,
     agentA: refA,
     agentB: refB,
   });
 
-  return { takeA, takeB, scoreA, scoreB, agentA: refA, agentB: refB, txs };
+  return {
+    takeA,
+    takeB,
+    scoreA,
+    scoreB,
+    agentA: refA,
+    agentB: refB,
+    txs,
+    hashscanUrl: paidA.hashscanUrl || paidB.hashscanUrl,
+  };
 }

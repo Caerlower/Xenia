@@ -25,6 +25,7 @@ apps/demo/.next/
 .env.local
 .env.*.local
 *.pem
+.xenia-hedera-payer.json
 apps/web/.design-preview.png
 
 .cursor/

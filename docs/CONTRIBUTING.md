@@ -20,4 +20,5 @@ This is a pnpm workspace. Use `pnpm --filter <name> <script>` for package-local 
 
 ## Status awareness
 
-`apps/api` and `apps/mcp` are WIP. Prefer extending `apps/web` / `apps/demo` / `contracts` unless you are intentionally working the Hedera/MCP track.
+- `apps/api` (Hedera x402) is **required** for demo Run / Pay HBAR.
+- `apps/mcp` is optional. Prefer extending `apps/web` / `apps/demo` / `contracts` / `apps/api` unless you are intentionally working MCP.

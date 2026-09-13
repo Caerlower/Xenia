@@ -11,7 +11,7 @@ import {
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
 import { XENIA_REGISTRY_ABI } from '@xenia/shared';
-import { CHECK_PRICE, NETWORK, createResourceServer } from './x402.js';
+import { CHECK_PRICE, NETWORK, createResourceServer, resolveHederaFeePayer } from './x402.js';
 
 loadRootEnv(import.meta.url);
 
@@ -53,7 +53,7 @@ type PaymentRequirements = {
   extra?: Record<string, unknown>;
 };
 
-function buildCheckRequirements(): PaymentRequirements {
+function buildCheckRequirements(feePayer?: string): PaymentRequirements {
   return {
     scheme: 'exact',
     network: NETWORK,
@@ -62,6 +62,7 @@ function buildCheckRequirements(): PaymentRequirements {
     asset: CHECK_PRICE.asset,
     amount: CHECK_PRICE.amount,
     price: CHECK_PRICE,
+    extra: feePayer ? { feePayer } : undefined,
   };
 }
 
@@ -72,7 +73,10 @@ function buildCheckRequirements(): PaymentRequirements {
 async function requireX402Payment(
   paymentHeader: string | undefined,
   requirements: PaymentRequirements,
-): Promise<{ ok: true } | { ok: false; status: number; body: unknown }> {
+): Promise<
+  | { ok: true; settlementTx?: string }
+  | { ok: false; status: number; body: unknown }
+> {
   if (!paymentHeader) {
     return {
       ok: false,
@@ -96,8 +100,13 @@ async function requireX402Payment(
     }
   }
 
+  const facilitatorUrl =
+    process.env.X402_FACILITATOR_URL ??
+    process.env.X402_TESTNET_FACILITATOR_URL ??
+    'https://api.testnet.blocky402.com';
+  const body = { x402Version: 2, paymentPayload, paymentRequirements: requirements };
+
   try {
-    // Resource server + facilitator verify/settle (Blocky402 / x402.org)
     const verify = await (resourceServer as unknown as {
       verify: (payload: unknown, reqs: unknown) => Promise<{ isValid: boolean; invalidReason?: string }>;
     }).verify(paymentPayload, requirements);
@@ -114,9 +123,11 @@ async function requireX402Payment(
       };
     }
 
-    // Settle asynchronously-compatible; await for demo clarity
     const settle = await (resourceServer as unknown as {
-      settle: (payload: unknown, reqs: unknown) => Promise<{ success: boolean; errorReason?: string }>;
+      settle: (
+        payload: unknown,
+        reqs: unknown,
+      ) => Promise<{ success: boolean; errorReason?: string; transaction?: string }>;
     }).settle?.(paymentPayload, requirements);
 
     if (settle && settle.success === false) {
@@ -127,19 +138,17 @@ async function requireX402Payment(
       };
     }
 
-    return { ok: true };
-  } catch (err) {
-    // Fallback: call facilitator HTTP API directly (matches Blocky402 docs)
-    const facilitatorUrl =
-      process.env.X402_FACILITATOR_URL ?? 'https://api.blocky402.com';
-    const body = { x402Version: 2, paymentPayload, paymentRequirements: requirements };
-
+    return { ok: true, settlementTx: settle?.transaction };
+  } catch {
     const verifyRes = await fetch(`${facilitatorUrl}/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const verifyJson = (await verifyRes.json()) as { isValid?: boolean; invalidReason?: string };
+    const verifyJson = (await verifyRes.json()) as {
+      isValid?: boolean;
+      invalidReason?: string;
+    };
     if (!verifyJson.isValid) {
       return {
         ok: false,
@@ -152,13 +161,28 @@ async function requireX402Payment(
       };
     }
 
-    await fetch(`${facilitatorUrl}/settle`, {
+    const settleRes = await fetch(`${facilitatorUrl}/settle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    const settleJson = (await settleRes.json()) as {
+      success?: boolean;
+      transaction?: string;
+      errorReason?: string;
+    };
+    if (settleJson.success === false) {
+      return {
+        ok: false,
+        status: 402,
+        body: {
+          error: settleJson.errorReason ?? 'Settlement failed',
+          accepts: [requirements],
+        },
+      };
+    }
 
-    return { ok: true };
+    return { ok: true, settlementTx: settleJson.transaction };
   }
 }
 
@@ -231,7 +255,11 @@ async function main() {
     status: 'ok',
     network: NETWORK,
     registry: REGISTRY || null,
-    facilitator: process.env.X402_FACILITATOR_URL ?? 'https://api.blocky402.com',
+    facilitator:
+      process.env.X402_FACILITATOR_URL ??
+      process.env.X402_TESTNET_FACILITATOR_URL ??
+      'https://api.testnet.blocky402.com',
+    payTo: SERVICE_ACCOUNT || null,
   }));
 
   /**
@@ -244,18 +272,35 @@ async function main() {
     if (!agentId) {
       return reply.code(400).send({ error: 'agentId required' });
     }
+    if (!SERVICE_ACCOUNT) {
+      return reply.code(503).send({
+        error: 'HEDERA_SERVICE_ACCOUNT_ID required (x402 payTo)',
+      });
+    }
 
     const paymentHeader =
       (req.headers['payment-signature'] as string | undefined) ??
       (req.headers['x-payment'] as string | undefined);
 
-    const gate = await requireX402Payment(paymentHeader, buildCheckRequirements());
+    const feePayer = await resolveHederaFeePayer();
+    const gate = await requireX402Payment(
+      paymentHeader,
+      buildCheckRequirements(feePayer),
+    );
     if (!gate.ok) {
       return reply.code(gate.status).send(gate.body);
     }
 
     const result = await queryStanding(agentId);
-    return reply.send({ paid: true, ...result });
+    return reply.send({
+      paid: true,
+      network: NETWORK,
+      settlementTx: gate.settlementTx,
+      hashscanUrl: gate.settlementTx
+        ? `https://hashscan.io/testnet/transaction/${encodeURIComponent(gate.settlementTx)}`
+        : undefined,
+      ...result,
+    });
   });
 
   /**

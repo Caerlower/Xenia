@@ -124,7 +124,7 @@ pnpm dev:api           # http://localhost:4021
 pnpm smoke:x402        # unpaid check must return 402
 ```
 
-> **Status:** x402 service is implemented and smoke-tested for the 402 gate; full product UI wiring is still WIP. Web register/vouch and demo Run do **not** require Hedera — they use Sepolia wallets / the host funder key.
+> **Status:** Hedera x402 is part of the core demo path. Run `pnpm dev:api` with `HEDERA_SERVICE_*` set; unpaid probes return HTTP 402; paid checks settle ~0.001 HBAR via Blocky402 testnet. Payer must differ from `payTo` (auto-provisioned if only `HEDERA_SERVICE_*` is set). Product directory UI can still call standing without HBAR; **demo Run always pays**.
 
 ---
 
@@ -138,7 +138,7 @@ pnpm smoke:x402        # unpaid check must return 402
 4. **Default** — `reportDefault` → Disputed
 5. **Window** — immutable `DISPUTE_WINDOW` (current demo deploy: **10s**)
 6. **Resolve** — `resolveDispute` → slash to victim or clear
-7. **Index + decide** — subgraph / MCP / optional paid API → transact or refuse
+7. **Index + pay + decide** — subgraph indexes standing → Hedera x402 unlocks `POST /xenia/check` → transact or refuse
 
 ### Runtime diagram
 
@@ -155,7 +155,7 @@ apps/demo ──SSE Run──► packages/demo orchestrator
                                  │
                     ┌────────────┴────────────┐
                     ▼                         ▼
-               apps/mcp (opt)          apps/api (opt)
+               apps/mcp (opt)          apps/api (required for demo)
                                        x402 → Hedera settle
                                        then return standing
 ```
@@ -181,7 +181,7 @@ xenia/
 ├── apps/
 │   ├── web/              # Product app (Next.js) → xenia.vercel.app
 │   ├── demo/             # On-chain demo theater → demo.xenia.vercel.app
-│   ├── api/              # Hedera x402 Fastify service (WIP wiring)
+│   ├── api/              # Hedera x402 Fastify service (demo Pay HBAR)
 │   └── mcp/              # Standing MCP server (optional)
 ├── packages/
 │   ├── shared/           # ABI + standing helpers
@@ -209,7 +209,7 @@ Monorepo tool: **pnpm** workspaces · Node **≥ 20**.
 | `packages/ens` | **Ready (scripts)** | Register / backing records / EAC demo |
 | `apps/web` | **Ready** | Register, sponsor, standing UI |
 | `apps/demo` + `packages/demo` | **Ready** | Full-bleed theater + Run |
-| `apps/api` (Hedera x402) | **Implemented / WIP UX** | 402 gate works; not yet product-wired |
+| `apps/api` (Hedera x402) | **Required for demo** | Pay HBAR settles via Blocky402 testnet |
 | `apps/mcp` | **Implemented / WIP E2E** | Subgraph standing tool |
 
 ---
@@ -221,20 +221,21 @@ corepack enable && corepack prepare pnpm@10.13.1 --activate
 cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
 # Sepolia RPC + funded key + SUBGRAPH_URL + WalletConnect project id
-# Optional Hedera: HEDERA_SERVICE_ACCOUNT_ID / HEDERA_SERVICE_PRIVATE_KEY
+# Hedera (required for demo Run): HEDERA_SERVICE_ACCOUNT_ID + HEDERA_SERVICE_PRIVATE_KEY
 
 pnpm install
 pnpm test:contracts
 
-pnpm dev:web                  # http://localhost:3000
+pnpm dev:api                  # http://localhost:4021  (required for demo Run)
+pnpm smoke:x402               # unpaid check must return 402
 pnpm dev:demo                 # http://localhost:3001
+pnpm dev:web                  # http://localhost:3000
 ```
 
-Optional sponsor demos:
+Optional extras:
 
 ```bash
 pnpm ens:register && pnpm ens:backing && pnpm ens:eac
-pnpm dev:api && pnpm smoke:x402
 pnpm dev:mcp
 ```
 

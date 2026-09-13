@@ -25,6 +25,7 @@ runOnchainDemo((event) => {
       txs: decision.txs,
       txHash: decision.txs.at(-1)?.hash,
       txLabel: decision.txs.at(-1)?.label,
+      hashscanUrl: decision.hashscanUrl,
     });
     process.exit(0);
   })

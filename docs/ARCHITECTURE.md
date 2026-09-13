@@ -20,7 +20,7 @@ Stake and slash **never** leave Sepolia. Hedera only settles **API access** fees
 4. **Default** — `reportDefault` opens dispute; status → Disputed.
 5. **Window** — `DISPUTE_WINDOW` seconds (demo deploy: **10**).
 6. **Resolve** — `resolveDispute(backingId, defaulted)` → slash to counterparty or return stake.
-7. **Standing** — subgraph (+ MCP / optional x402 API) scores agents for UIs.
+7. **Standing** — subgraph scores agents; demo Run pays Hedera x402 to unlock `POST /xenia/check` (MCP is an optional free reader).
 
 ## Apps
 
@@ -28,10 +28,10 @@ Stake and slash **never** leave Sepolia. Hedera only settles **API access** fees
 Next.js product surface. Wagmi/RainbowKit → Sepolia registry. Standing/directory via subgraph API routes. ENS names in UX; namehash on-chain.
 
 ### `apps/demo`
-Demo-only theater. `POST /api/run-demo` spawns `packages/demo` orchestrator (fresh wallets each Run, funded from host key). No product wallet flows.
+Demo-only theater. `POST /api/run-demo` spawns `packages/demo` orchestrator (fresh wallets each Run, funded from host key). Full Run requires `pnpm dev:api` + Hedera credentials for the Pay HBAR step.
 
 ### `apps/api`
-Fastify + `@x402/hedera`. `POST /xenia/check` returns HTTP 402 until Blocky402 settlement on Hedera, then returns standing. Product UI wiring still WIP.
+Fastify + `@x402/hedera`. `POST /xenia/check` returns HTTP 402 until Blocky402 settlement on Hedera, then returns standing. Required alongside the demo for ETHGlobal Hedera path.
 
 ### `apps/mcp`
 Stdio MCP `check_agent_standing` over subgraph GraphQL.

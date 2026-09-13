@@ -13,6 +13,7 @@ type StepId =
   | 'waiting'
   | 'slash'
   | 'index'
+  | 'x402'
   | 'verdict'
   | 'done'
   | 'error';
@@ -29,7 +30,7 @@ const STEPS: Step[] = [
     id: 'idle',
     n: '00',
     title: 'Ready',
-    body: 'Mint two new agents and run the full Sepolia path. Gas only when you press Run.',
+    body: 'Mint two new agents and run the full Sepolia path, then pay Hedera x402 for standing.',
   },
   {
     id: 'boot',
@@ -80,16 +81,22 @@ const STEPS: Step[] = [
     body: 'Brief wait for The Graph to catch up.',
   },
   {
-    id: 'verdict',
+    id: 'x402',
     n: '09',
+    title: 'Pay HBAR',
+    body: 'Hedera x402: HTTP 402 → pay ~0.001 HBAR → unlock standing API.',
+  },
+  {
+    id: 'verdict',
+    n: '10',
     title: 'Decide',
-    body: 'Standing check: transact with A, refuse B.',
+    body: 'Standing from paid check: transact with A, refuse B.',
   },
   {
     id: 'done',
     n: 'OK',
     title: 'Complete',
-    body: 'This run finished on Sepolia.',
+    body: 'Sepolia slash path + Hedera x402 payment finished.',
   },
   {
     id: 'error',
@@ -112,6 +119,7 @@ const TOUR_STEPS: StepId[] = [
   'waiting',
   'slash',
   'index',
+  'x402',
   'verdict',
 ];
 
@@ -170,6 +178,7 @@ function SceneVisual({
   runAgents,
   networkAgents,
   txs,
+  hashscanUrl,
 }: {
   stepId: StepId;
   status: string;
@@ -180,6 +189,7 @@ function SceneVisual({
   };
   networkAgents: number;
   txs: DemoTx[];
+  hashscanUrl?: string | null;
 }) {
   if (stepId === 'error') {
     return (
@@ -329,6 +339,32 @@ function SceneVisual({
     );
   }
 
+  if (stepId === 'x402') {
+    return (
+      <div className="demo-scene-enter flex h-full flex-col justify-center">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-paper/55">
+          Hedera testnet · Blocky402
+        </p>
+        <p className="mt-3 x-pixel text-[clamp(40px,9vw,84px)] text-paper">
+          X402
+        </p>
+        <p className="mt-4 max-w-[36ch] font-mono text-[13px] leading-relaxed text-paper/75">
+          {status || 'HTTP 402 → pay ~0.001 HBAR → unlock standing'}
+        </p>
+        {hashscanUrl && (
+          <a
+            className="mt-6 inline-flex w-fit border border-[#7dcea0]/50 bg-[#101610]/80 px-4 py-2 font-mono text-[12px] text-[#7dcea0] hover:underline"
+            href={hashscanUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open HashScan settlement
+          </a>
+        )}
+      </div>
+    );
+  }
+
   // verdict / done
   const a = scores.scoreA ?? 0;
   const b = scores.scoreB ?? 0;
@@ -348,7 +384,7 @@ function SceneVisual({
           </div>
           <p className="demo-score x-pixel text-[64px] text-paper">{a}</p>
           <p className="x-pixel text-[22px] text-[#7dcea0]">
-            {okA ? 'TRANSACT' : 'HOLD'}
+            {okA ? 'TRANSACT' : 'REFUSE'}
           </p>
         </div>
         <div className="flex flex-col justify-between border border-[#ff6b5a]/50 bg-[#2a1210]/85 p-5 sm:p-6">
@@ -366,10 +402,24 @@ function SceneVisual({
           </p>
         </div>
       </div>
-      {stepId === 'done' && txs.length > 0 && (
-        <div className="border border-paper/20 bg-black/35 p-4 backdrop-blur-sm">
-          <p className="x-pixel text-[18px] text-paper">Verify on Sepolia</p>
-          <TxLedger txs={txs} compact />
+      {stepId === 'done' && (
+        <div className="space-y-3 border border-paper/20 bg-black/35 p-4 backdrop-blur-sm">
+          {hashscanUrl && (
+            <a
+              className="inline-flex font-mono text-[12px] text-[#7dcea0] underline-offset-2 hover:underline"
+              href={hashscanUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Hedera x402 settlement → HashScan
+            </a>
+          )}
+          {txs.length > 0 && (
+            <>
+              <p className="x-pixel text-[18px] text-paper">Verify on Sepolia</p>
+              <TxLedger txs={txs} compact />
+            </>
+          )}
         </div>
       )}
     </div>
@@ -385,6 +435,7 @@ export function DemoTheater() {
   const [touring, setTouring] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txs, setTxs] = useState<DemoTx[]>([]);
+  const [hashscanUrl, setHashscanUrl] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [scores, setScores] = useState<{
     scoreA?: number;
@@ -463,6 +514,7 @@ export function DemoTheater() {
     setStatus('Starting on-chain demo…');
     setTxHash(null);
     setTxs([]);
+    setHashscanUrl(null);
     setScores({});
     setRunAgents({});
     setLogLines(['Starting on-chain demo…']);
@@ -493,6 +545,7 @@ export function DemoTheater() {
             txHash?: string;
             txLabel?: string;
             txs?: DemoTx[];
+            hashscanUrl?: string;
             scoreA?: number;
             scoreB?: number;
             takeA?: boolean;
@@ -519,6 +572,7 @@ export function DemoTheater() {
               ];
             });
           }
+          if (event.hashscanUrl) setHashscanUrl(event.hashscanUrl);
           if (event.agentA || event.agentB) {
             setRunAgents((prev) => ({
               agentA: event.agentA ?? prev.agentA,
@@ -646,6 +700,7 @@ export function DemoTheater() {
                 setStatus('');
                 setTxHash(null);
                 setTxs([]);
+                setHashscanUrl(null);
                 setRunAgents({});
                 setScores({});
                 setLogLines([]);
@@ -709,6 +764,7 @@ export function DemoTheater() {
             runAgents={runAgents}
             networkAgents={state?.network.agents ?? 0}
             txs={txs}
+            hashscanUrl={hashscanUrl}
           />
         </div>
 
@@ -728,8 +784,18 @@ export function DemoTheater() {
             </p>
             {!running && previewId && stepId === 'idle' && (
               <p className="mt-3 text-[12px] text-paper/45">
-                Preview only. Run on-chain spends Sepolia gas.
+                Preview only. Run on-chain spends Sepolia gas + Hedera HBAR.
               </p>
+            )}
+            {hashscanUrl && (
+              <a
+                className="mt-3 inline-block font-mono text-[11px] text-[#7dcea0] underline-offset-2 hover:underline"
+                href={hashscanUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                HashScan x402 settlement
+              </a>
             )}
             {txs.length > 0 ? (
               <TxLedger txs={txs} />

@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@x402/hedera": "^2.18.0",
     "@xenia/config": "workspace:*",
     "@xenia/shared": "workspace:*",
     "dotenv": "^16.4.7",

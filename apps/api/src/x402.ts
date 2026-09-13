@@ -9,7 +9,7 @@ export function createResourceServer() {
   const facilitatorUrl =
     process.env.X402_FACILITATOR_URL ??
     process.env.X402_TESTNET_FACILITATOR_URL ??
-    'https://api.blocky402.com';
+    'https://api.testnet.blocky402.com';
 
   const facilitatorClient = new HTTPFacilitatorClient({ url: facilitatorUrl });
 
@@ -21,3 +21,22 @@ export function createResourceServer() {
 
 export const CHECK_PRICE = { asset: '0.0.0', amount: '100000' }; // 0.001 HBAR
 export const NETWORK = 'hedera:testnet' as const;
+
+export async function resolveHederaFeePayer(): Promise<string> {
+  const facilitatorUrl =
+    process.env.X402_FACILITATOR_URL ??
+    process.env.X402_TESTNET_FACILITATOR_URL ??
+    'https://api.testnet.blocky402.com';
+  const supported = (await fetch(`${facilitatorUrl}/supported`).then((r) =>
+    r.json(),
+  )) as {
+    kinds?: Array<{ network?: string; extra?: { feePayer?: string } }>;
+    signers?: Record<string, string[]>;
+  };
+  const hedera = supported.kinds?.find((k) => k.network === 'hedera:testnet');
+  return (
+    hedera?.extra?.feePayer ??
+    supported.signers?.['hedera:*']?.[0] ??
+    '0.0.7162784'
+  );
+}
