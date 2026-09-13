@@ -1,0 +1,42 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: XeniaRegistry
+    network: sepolia
+    source:
+      address: "0x8B71cd2dfDD7b8F774c84fF977EDF7839ceFDF28"
+      abi: XeniaRegistry
+      startBlock: 11695254
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Agent
+        - Backing
+        - PremiumPayment
+        - DefaultReport
+        - SlashEvent
+      abis:
+        - name: XeniaRegistry
+          file: ./abis/XeniaRegistry.json
+      eventHandlers:
+        - event: AgentRegistered(indexed address,indexed bytes32,uint256)
+          handler: handleAgentRegistered
+        - event: BackingCreated(indexed bytes32,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleBackingCreated
+        - event: PremiumPaid(indexed bytes32,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handlePremiumPaid
+        - event: DefaultReported(indexed bytes32,indexed address,indexed address,address,uint256,uint256,uint256)
+          handler: handleDefaultReported
+        - event: StakeSlashed(indexed bytes32,indexed address,indexed address,address,uint256,uint256)
+          handler: handleStakeSlashed
+        - event: DisputeResolved(indexed bytes32,indexed address,indexed address,bool,uint256)
+          handler: handleDisputeResolved
+        - event: BackingRevoked(indexed bytes32,indexed address,indexed address,uint256,uint256)
+          handler: handleBackingRevoked
+      file: ./src/mapping.ts
